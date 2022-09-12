@@ -1,0 +1,8 @@
+[Unit] 
+Description=Netconsole UDP receiver
+
+[Socket] 
+ListenDatagram=2
+
+[Install] 
+WantedBy=sockets.target

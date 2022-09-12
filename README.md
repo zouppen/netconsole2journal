@@ -21,7 +21,7 @@ Logging of network booting workstations.
 Install dependencies. In Debian based systems for example:
 
 ```sh
-sudo apt install cmake libglib2.0-dev
+sudo apt install cmake libglib2.0-dev libsystemd-dev
 ```
 
 And build:
@@ -54,7 +54,7 @@ journalctl -fn0 -o export -t netconsole2journal
 
 To deploy this properly, use
 [systemd.socket](https://www.freedesktop.org/software/systemd/man/systemd.socket.html)
-for activating it.
+for activating it. See attached [configuration files](systemd/)
 
 ## Status
 

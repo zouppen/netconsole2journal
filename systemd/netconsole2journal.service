@@ -1,0 +1,8 @@
+[Unit]
+Description=Netconsole UDP receiver and logger
+
+[Service]
+Type=simple
+User=USER
+Group=GROUP
+ExecStart=/PATH/TO/netconsole2journal/build/netconsole2journal -v
