@@ -10,6 +10,7 @@ find_package(PkgConfig REQUIRED)
 
 # these calls create special `PkgConfig::<MODULE>` variables
 pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
+pkg_check_modules(SYSTEMD REQUIRED IMPORTED_TARGET libsystemd)
 
 add_compile_options(
     -std=gnu17 # C17 standard
@@ -23,4 +24,5 @@ add_executable(netconsole2journal ${SRC_FILES})
 
 target_link_libraries(netconsole2journal PUBLIC
     PkgConfig::GLIB
+    PkgConfig::SYSTEMD
 )

@@ -21,7 +21,14 @@
 #include <err.h>
 #include <errno.h>
 #include <glib.h>
+#include <systemd/sd-daemon.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include "common.h"
+
+#define SD_LISTEN_FDS_START 3
+#define DATAGRAM_MAX_LEN 1001 // 1000 is the maximum as defined in netconsole.txt
 
 static gchar *from_bool(gboolean x);
 
@@ -53,11 +60,54 @@ int main(int argc, char **argv)
 		errx(1, "This command only expects flags, not arguments. See %s --help", argv[0]);
 	}
 
+	int socks = sd_listen_fds(TRUE);
+	if (socks != 1) {
+		errx(2, "Must be invoked by systemd socket activation. For testing, use 'systemd-socket-activate'");
+	}
+	
 	// Report startup variables
 	if (verbose) {
 		printf("TODO startup debug info\n");
 	}
 
+
+	struct sockaddr_storage peer_addr;
+
+	while (TRUE) {
+		// Buffer for holding a single datagram
+		char buf[DATAGRAM_MAX_LEN];
+		
+		socklen_t peer_addr_len = sizeof(peer_addr);
+		ssize_t got = recvfrom(SD_LISTEN_FDS_START,
+				       buf, DATAGRAM_MAX_LEN, 0,
+				       (struct sockaddr *)&peer_addr, &peer_addr_len);
+		if (got == -1) {
+			err(3, "Unable to read from socket");
+		}
+
+		char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+		int code = getnameinfo((struct sockaddr *)&peer_addr, peer_addr_len,
+				       hbuf, sizeof(hbuf),
+				       sbuf, sizeof(sbuf),
+				       NI_NUMERICHOST | NI_NUMERICSERV);
+		if (code != 0) {
+			warn("Converting of address has failed: %s", gai_strerror(code));
+		}
+
+		if (got == DATAGRAM_MAX_LEN) {
+			warnx("Too long datagram received from %s:%s, ignoring", hbuf, sbuf);
+			continue;
+		}
+		if (got == 0) {
+			warn("Got an empty datagram from %s:%s, ignoring", hbuf, sbuf);
+			continue;
+		}
+
+		// Outputting this. Truncating newline
+		buf[got-1] = '\0';
+		printf("Joo saatiinkin %s osoitteesta %s:%s\n", buf, hbuf, sbuf);
+	}
+	
 	return 0;
 }
 
