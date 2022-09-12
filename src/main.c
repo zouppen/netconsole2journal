@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <glib.h>
 #include <systemd/sd-daemon.h>
+#include <systemd/sd-journal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -118,7 +119,10 @@ int main(int argc, char **argv)
 
 		// Outputting this. Truncating newline
 		buf[got-1] = '\0';
-		printf("Joo saatiinkin %s osoitteesta %s:%s\n", buf, hbuf, sbuf);
+		sd_journal_send("MESSAGE=%s", buf,
+				"HOSTNAME=%s", hbuf,
+				"PORT=%s", sbuf,
+				NULL);
 	}
 	
 	return 0;
