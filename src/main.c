@@ -32,10 +32,12 @@
 
 static gchar *from_bool(gboolean x);
 
+gchar *required_port = NULL;
 gboolean verbose = FALSE;
 
 static GOptionEntry entries[] =
 {
+	{ "src_port", 'p', 0, G_OPTION_ARG_STRING, &required_port, "Required source port, e.g. 2", "PORT"},
 	{ "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Verbose output.", NULL},
 	{ NULL }
 };
@@ -67,7 +69,10 @@ int main(int argc, char **argv)
 	
 	// Report startup variables
 	if (verbose) {
-		printf("TODO startup debug info\n");
+		printf("Listening...\n");
+		if (required_port != NULL) {
+			printf("Allowing only source port %s\n", required_port);
+		}
 	}
 
 
@@ -89,17 +94,25 @@ int main(int argc, char **argv)
 		int code = getnameinfo((struct sockaddr *)&peer_addr, peer_addr_len,
 				       hbuf, sizeof(hbuf),
 				       sbuf, sizeof(sbuf),
-				       NI_NUMERICHOST | NI_NUMERICSERV);
-		if (code != 0) {
-			warn("Converting of address has failed: %s", gai_strerror(code));
-		}
+				       NI_NUMERICSERV);
 
+		// Going through multiple non-wanted cases
+		if (code != 0) {
+			warnx("Converting of address has failed: %s", gai_strerror(code));
+			continue;
+		}
+		if (required_port != NULL && strcmp(required_port, sbuf) != 0) {
+			if (verbose) {
+				warnx("Unexpected packet from %s:%s, ignoring", hbuf, sbuf);
+			}
+			continue;
+		}
 		if (got == DATAGRAM_MAX_LEN) {
 			warnx("Too long datagram received from %s:%s, ignoring", hbuf, sbuf);
 			continue;
 		}
 		if (got == 0) {
-			warn("Got an empty datagram from %s:%s, ignoring", hbuf, sbuf);
+			warnx("Got an empty datagram from %s:%s, ignoring", hbuf, sbuf);
 			continue;
 		}
 
